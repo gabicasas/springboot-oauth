@@ -1,25 +1,33 @@
 package com.gcc.app.oauth.security;
 
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
+
 @Configuration
-@EnableAuthorizationServer
+@EnableAuthorizationServer // <!-- El javadoc dice las rutas para obtener token y refrescarlo
 public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAdapter
 {
 	
+	
+	@Autowired
+	UserDetailsService userDetailsService;
 	
 	@Autowired
 	private Environment environment;
@@ -30,6 +38,9 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
+	
+	@Autowired
+	InfoAdicionalToken infoAdicionalToken;
 
 	
 	/**
@@ -40,9 +51,10 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
 		security.tokenKeyAccess("permitAll()") // tokenKeyAcces es /ouath/authorize y se configura como publici
 		.checkTokenAccess("isAuthenticated()")
-	
+		
 		; // checkToken access son las rutas que validan y se piden q esten autenticadas
 		//super.configure(security);
+		
 	}
 
 	/**
@@ -69,12 +81,17 @@ public class AuthorizationServerConfig  extends AuthorizationServerConfigurerAda
 
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		
+		TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+		tokenEnhancerChain.setTokenEnhancers(Arrays.asList(infoAdicionalToken,accessTokenConverter()));
 		//Registra el autentication manager inyectadas q se crea en SpringSecurityConf
 		endpoints.authenticationManager(authenticationManager)
 		//Almacen de tokens
 		.tokenStore(tokenStore())
 		// Conversor de token que genera el token jwt
-		.accessTokenConverter(accessTokenConverter());
+		.accessTokenConverter(accessTokenConverter())
+		.userDetailsService(userDetailsService)
+		.tokenEnhancer(tokenEnhancerChain);
 		
 		
 		

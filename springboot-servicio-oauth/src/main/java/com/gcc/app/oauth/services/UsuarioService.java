@@ -21,6 +21,14 @@ import brave.Tracer;
 import feign.FeignException;
 
 
+/** 
+ * Esta ya configura de donde sale el usuario
+ * 
+ * @author gabriel.casascorral
+ *
+ */
+
+
 @Service
 public class UsuarioService implements IUsuarioService,UserDetailsService //<-- Es propia de Spring para auntenticar el user
 {
@@ -66,7 +74,7 @@ public class UsuarioService implements IUsuarioService,UserDetailsService //<-- 
 
 	@Override
 	public Usuario findByUsername(String username) {
-		// TODO Auto-generated method stub
+		
 		return usuarioFeignClient.findByUsername(username);
 	}
 
